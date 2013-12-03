@@ -49,11 +49,21 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 
 	private ArrayList<IPAddress> neighborsList = new ArrayList<>();
 	private final  Map<IPAddress, LSPMessage> LSDB = new HashMap<IPAddress, LSPMessage>();
-
+	
+	/**
+	 * 
+	 * @param host
+	 * @param name
+	 */
 	public DijkstraRoutingProtocol(Host host, String name) {
 		super(host, name);
 	}
-
+	/**
+	 * 
+	 * @param router
+	 * @param hELLOInstervalTime
+	 * @param lSPInstervalTime
+	 */
 	public DijkstraRoutingProtocol(IPRouter router, int hELLOInstervalTime,
 			int lSPInstervalTime) {
 		super(router, PROTOCOL_NAME);
@@ -96,9 +106,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				
 				e.printStackTrace();
 			}
-			 
-			 
-			 
+			
 			for (Entry<IPAddress, Integer> v : u.object.getLsp().entrySet()) {
 				IPAddress key = v.getKey();
 				int cuv = v.getValue();
@@ -116,18 +124,45 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 
 		}
 	}
-
+	/**
+	 * 
+	 * @param m
+	 * @throws Exception
+	 */
 	private void sendToNeighbors(Message m) throws Exception {
 		for (IPInterfaceAdapter iface : this.router.getIPLayer()
 				.getInterfaces()) {
 			if (iface instanceof IPLoopbackAdapter) {
 				continue;
 			}
-			iface.send(new Datagram(iface.getAddress(), IPAddress.BROADCAST,
-					IP_PROTO_DIJKSTRA, 1, m), null);
+			iface.send(new Datagram(iface.getAddress(), IPAddress.BROADCAST,IP_PROTO_DIJKSTRA, 1, m), null);
 		}
 	}
+	/**
+	 * 
+	 * @param datagram
+	 */
+	private void handleHello(Datagram datagram) {
+		HelloMessage hello = (HelloMessage) datagram.getPayload();
 
+		if (hello.getNeighborsList().isEmpty()) {
+			this.neighborsList.add(((HelloMessage)datagram.getPayload()).getRouterID());
+			sendHello();
+		} else {
+			for (IPAddress ip : hello.getNeighborsList()) {
+				if (this.neighborsList.contains(ip)) {
+					this.neighborsList.add(((HelloMessage)datagram.getPayload()).getRouterID());
+				}
+			}
+		}
+
+		System.out.println(this.router+"-"+ getRouterID());
+		System.out.println(this.neighborsList);
+		System.out.println("-------------------\n");
+	}
+	/**
+	 * 
+	 */
 	private void sendHello() {
 		try {
 			for (IPInterfaceAdapter iface : this.router.getIPLayer()
@@ -145,7 +180,11 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			e.printStackTrace();
 		}
 	}
-
+	/**
+	 * 
+	 * @param src
+	 * @param lsp
+	 */
 	private void sendLSP(IPInterfaceAdapter src, LSPMessage lsp) {
 		try {
 			for (IPInterfaceAdapter iface : this.router.getIPLayer()
@@ -161,7 +200,10 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			e.printStackTrace();
 		}
 	}
-
+	/**
+	 * 
+	 * @throws Exception
+	 */
 	private void initHelloTimer() throws Exception {
 		// this.sendToNeighbors(new Message() {});
 
@@ -193,7 +235,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	 */
 	private void initLSPTimer() {
 
-		this.helloTimer = new Timer("tLSP-" + this.router.name);
+		this.LSPTimer = new Timer("tLSP-" + this.router.name);
 
 		TimerTask task = new TimerTask() {
 
@@ -212,9 +254,14 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				router.getNetwork().scheduler.schedule(evt);
 			}
 		};
-		this.helloTimer.schedule(task, 0, this.LSPInstervalTime);
+		this.LSPTimer.schedule(task, 0, this.LSPInstervalTime);
 	}
-	
+	/**
+	 * 
+	 * @param ipSrc
+	 * @param oif
+	 * @return
+	 */
 	public LSPMessage creatLSP(IPAddress ipSrc, IPInterfaceAdapter oif)
 	{
 		Map<IPAddress,Integer> lsp = new HashMap<>();
@@ -224,31 +271,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		LSPMessage lspMsg = new LSPMessage(ipSrc, oif, 0, lsp);
 		return lspMsg;
 	}
-
-	/**
-	 * 
-	 * @param datagram
-	 */
-	private void handleHello(Datagram datagram) {
-		HelloMessage hello = (HelloMessage) datagram.getPayload();
-
-		if (hello.getNeighborsList().isEmpty()) {
-			this.neighborsList.add(((HelloMessage)datagram.getPayload()).getRouterID());
-			sendHello();
-		} else {
-			for (IPAddress ip : hello.getNeighborsList()) {
-				if (getRouterID().equals(ip) && !this.neighborsList.contains(ip)) {
-					this.neighborsList.add(((HelloMessage)datagram.getPayload()).getRouterID());
-				}
-
-			}
-		}
-
-		System.out.println(this.router+"-"+ getRouterID());
-		System.out.println(this.neighborsList);
-		System.out.println("-------------------\n");
-	}
-
 	/**
 	 * 
 	 * @param src 
@@ -272,7 +294,10 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		sendLSP(src, (LSPMessage) datagram.getPayload());
 
 	}
-	
+	/**
+	 * 
+	 * @return
+	 */
 	public IPAddress getRouterID() {
 		IPAddress routerID= null;
 		for (IPInterfaceAdapter iface: this.router.getIPLayer().getInterfaces()) {
@@ -291,7 +316,8 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				.getInterfaces()) {
 			iface.addAttrListener(this);
 		}
-		initHelloTimer();
+		sendHello();
+		//initHelloTimer();
 		//initLSPTimer();
 	}
 

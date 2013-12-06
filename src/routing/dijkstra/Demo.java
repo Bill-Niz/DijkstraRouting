@@ -21,7 +21,7 @@ import reso.utilities.NetworkBuilder;
 import reso.utilities.NetworkGrapher;
 
 public class Demo {
-	public static final String TOPO_FILE = "reso/data/topology.txt";
+	public static final String TOPO_FILE = "reso/data/topology-min.txt";
 	public static int HELLOIntervalTime = 5000;
 	public static int LSPIntervalTime = 10000;
 
@@ -61,10 +61,11 @@ public class Demo {
 				router.start();
 			}
 
-			while (scheduler.hasMoreEvents()) {
+			/*while (scheduler.hasMoreEvents()) {
 				scheduler.runNextEvent();
 				Thread.sleep(100);
-			}
+			}*/
+			scheduler.runUntil(30);
 
 			// Display forwarding table for each node
 			FIBDumper.dumpForAllRouters(network);

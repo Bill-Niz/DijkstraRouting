@@ -30,6 +30,7 @@ import reso.ip.IPLoopbackAdapter;
 import reso.ip.IPRouteEntry;
 import reso.ip.IPRouter;
 import reso.scheduler.AbstractEvent;
+import routing.dijkstra.LSPMessage.LSPData;
 import routing.dijkstra.Node;
 
 /**
@@ -45,8 +46,8 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	private int HELLOInstervalTime;
 	private int LSPInstervalTime;
 	private IPRouter router;
-	private Timer helloTimer;
-	private Timer LSPTimer;
+	private AbstractTimer helloTimer;
+	private AbstractTimer LSPTimer;
 
 	private ArrayList<IPAddress> neighborsList = new ArrayList<>();
 	private Map<IPAddress, NeighborInfo> neighborInfoList = new HashMap<IPAddress, NeighborInfo>();
@@ -76,12 +77,10 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		 */
 		@Override
 		public String toString() {
-			return "[idRouter=" + idRouter + ", metric=" + metric
-					+ ", oif=" + oif + "]";
+			return "[" + idRouter + ":" + metric
+					+ "=>" + oif + "]";
 		}
-		
-		
-		
+	
 	}
 	
 	/**
@@ -112,7 +111,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	 * @param LSDB
 	 * @param source
 	 */
-	private void dijkstra( Map<IPAddress, LSPMessage> LSDB,IPAddress source) {
+	private synchronized void dijkstra( Map<IPAddress, LSPMessage> LSDB,IPAddress source) {
 		
 		FibonacciHeap<LSPMessage> Q = new FibonacciHeap<LSPMessage>();
 		
@@ -135,19 +134,26 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			Node<LSPMessage> u = Q.extractMin();
 			// Update FIB
 			this.table.put(u.object.getRouterID(), new NeighborInfo(u.object.getRouterID(), (int) u.value, u.object.oif));
-			
-			
-			for (Entry<IPAddress, Integer> v : u.object.getLsp().entrySet()) {
+			D.remove(u.object.getRouterID());
+			try {
+				IPInterfaceAdapter ita = this.router.getIPLayer().getInterfaceByName(u.object.oif.getName());
+				if(ita != null && !u.object.getRouterID().equals(source))
+					this.router.getIPLayer().addRoute(u.object.getRouterID(), ita);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			for (Entry<IPAddress, LSPData> v : u.object.getLsp().entrySet()) {
 				IPAddress key = v.getKey();
-				int cuv = v.getValue();
+				LSPData data = v.getValue();
 				
 				Node<LSPMessage> dv = D.get(key);
 				//relax(u,v)
 				if(dv != null){
-				if(dv.value > u.value + cuv)
+				if(dv.value > u.value + data.metric)
 				{
-					Q.decreaseKey(dv, u.value + cuv);
-					//dv.object.oif = u.object.oif;
+					Q.decreaseKey(dv, u.value + data.metric);
+					dv.object.oif = neighborInfoList.get(data.routerID).oif;
 				}
 				}
 				
@@ -185,6 +191,9 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		{
 			this.neighborsList.add(hello.getRouterID());
 			this.neighborInfoList.put(hello.getRouterID(), new NeighborInfo(hello.getRouterID(), src.getMetric(), src));
+			System.out.println(this.router+"-"+ getRouterID());
+			System.out.println(this.neighborInfoList);
+			System.out.println("-------------------\n");
 			
 		}
 			
@@ -257,30 +266,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	 * @throws Exception
 	 */
 	private void initHelloTimer() throws Exception {
-		// this.sendToNeighbors(new Message() {});
-/*
-		this.helloTimer = new Timer("tHello-" + this.router.name);
-
-		TimerTask task = new TimerTask() {
-
-			@Override
-			public void run() {
-
-				AbstractEvent evt = new AbstractEvent(HELLOInstervalTime) {
-
-					@Override
-					public void run() throws Exception {
-						sendHello();
-
-					}
-				};
-
-				router.getNetwork().scheduler.schedule(evt);
-			}
-		};
-		this.helloTimer.schedule(task, 0, this.HELLOInstervalTime);
-		*/
-		AbstractTimer helloT = new AbstractTimer(this.router.getNetwork().scheduler,1,true) {
+		this.helloTimer = new AbstractTimer(this.router.getNetwork().scheduler,1,false) {
 			
 			@Override
 			protected void run() throws Exception {
@@ -288,46 +274,33 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				
 			}
 		};
-		helloT.start();
+		this.helloTimer.start();
 
 	}
-
 	/**
 	 * 
 	 */
 	private void initLSPTimer() {
 
-	/*	this.LSPTimer = new Timer("tLSP-" + this.router.name);
-
-		TimerTask task = new TimerTask() {
-
-			@Override
-			public void run() {
-
-				AbstractEvent evt = new AbstractEvent(LSPInstervalTime) {
-
-					@Override
-					public void run() throws Exception {
-						LSDB.put(getRouterID(), creatLSP(getRouterID(), null));
-						sendLSP(null, creatLSP(getRouterID(), null));
-
-					}
-				};
-
-				router.getNetwork().scheduler.schedule(evt);
-			}
-		};
-		this.LSPTimer.schedule(task, 500, this.LSPInstervalTime);*/
-AbstractTimer helloT = new AbstractTimer(this.router.getNetwork().scheduler,10,true) {
+		this.LSPTimer = new AbstractTimer(this.router.getNetwork().scheduler,10,false) {
 			
 			@Override
 			protected void run() throws Exception {
-				LSDB.put(getRouterID(), creatLSP(getRouterID(), (IPInterfaceAdapter) router.getInterfaceByName("lo")));
-				sendLSP(null, creatLSP(getRouterID(), null));
+				IPInterfaceAdapter ifaceLoop = null;
 				
+				for (IPInterfaceAdapter iface : router.getIPLayer()
+						.getInterfaces()) {
+					if (iface instanceof IPLoopbackAdapter) {
+						ifaceLoop = iface;
+						break;
+					}
+				}
+				LSPMessage firstLsp = creatLSP(getRouterID(), ifaceLoop,0);
+				LSDB.put(getRouterID(),firstLsp );
+				sendLSP(ifaceLoop, firstLsp);
 			}
 		};
-		helloT.start();
+		this.LSPTimer.start();
 	}
 	/**
 	 * 
@@ -335,17 +308,17 @@ AbstractTimer helloT = new AbstractTimer(this.router.getNetwork().scheduler,10,t
 	 * @param oif
 	 * @return
 	 */
-	private LSPMessage creatLSP(IPAddress ipSrc, IPInterfaceAdapter oif)
+	private LSPMessage creatLSP(IPAddress ipSrc, IPInterfaceAdapter oif, int numSequence)
 	{
-		Map<IPAddress,Integer> lsp = new HashMap<>();
+		Map<IPAddress,LSPData> lsp = new HashMap<>();
 		
 		for (Entry<IPAddress, NeighborInfo> entry : this.neighborInfoList.entrySet())  {
 			IPAddress key = entry.getKey();
 			NeighborInfo value = entry.getValue();
 			
-			lsp.put(key, value.metric);
+			lsp.put(key, new LSPMessage.LSPData(key, value.metric, value.oif));
 		}
-		LSPMessage lspMsg = new LSPMessage(ipSrc, oif, 0, lsp);
+		LSPMessage lspMsg = new LSPMessage(ipSrc, oif, numSequence, lsp);
 		return lspMsg;
 	}
 	/**
@@ -360,8 +333,8 @@ AbstractTimer helloT = new AbstractTimer(this.router.getNetwork().scheduler,10,t
 		//	LSDB.put(datagram.src,(LSPMessage) datagram.getPayload());
 		//}
 		//else if ((LSDB.get(datagram.src).getNumSequence() < (((LSPMessage)datagram.getPayload()).getNumSequence()))) {
-			
-			LSDB.put(datagram.src,(LSPMessage) datagram.getPayload());
+			LSPMessage lspMsg = (LSPMessage) datagram.getPayload();
+			LSDB.put(lspMsg.getRouterID(),lspMsg);
 		//} 
 		/*System.out.println(this.router);
 		System.out.println("--LSDB--");

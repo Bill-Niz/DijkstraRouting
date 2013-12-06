@@ -20,30 +20,48 @@ import reso.ip.IPInterfaceAdapter;
 public class LSPMessage implements Message{
 	
 	private final IPAddress routerID;
-	public  IPInterfaceAdapter oif;
 	private int numSequence;
-    private final Map<IPAddress,Integer> lsp;
+	public IPInterfaceAdapter oif;
+    private final Map<IPAddress,LSPData> lsp;
     
-	
-
-	/**
-	 * @return the oif
-	 */
-	public IPInterfaceAdapter getOif() {
-		return oif;
+	public static class LSPData
+	{
+		public IPAddress routerID;
+		public int metric;
+		public  IPInterfaceAdapter oif;
+		/**
+		 * @param routerID
+		 * @param metric
+		 * @param oif
+		 */
+		public LSPData(IPAddress routerID, int metric, IPInterfaceAdapter oif) {
+			super();
+			this.routerID = routerID;
+			this.metric = metric;
+			this.oif = oif;
+			
+		}
+		/* (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return "[" + routerID + ":" + metric
+					+ ", oif=" + oif + "]";
+		}
+		
+		
 	}
-
 	/**
 	 * @param routerID
-	 * @param oif
 	 * @param numSequence
 	 * @param lsp
 	 */
 	public LSPMessage(IPAddress routerID, IPInterfaceAdapter oif, int numSequence,
-			Map<IPAddress, Integer> lsp) {
+			Map<IPAddress, LSPData> lsp) {
 		super();
-		this.routerID = routerID;
 		this.oif = oif;
+		this.routerID = routerID;
 		this.numSequence = numSequence;
 		this.lsp = lsp;
 	}
@@ -65,7 +83,7 @@ public class LSPMessage implements Message{
 	/**
 	 * @return the lsp
 	 */
-	public Map<IPAddress, Integer> getLsp() {
+	public Map<IPAddress, LSPData> getLsp() {
 		return lsp;
 	}
 
@@ -74,9 +92,8 @@ public class LSPMessage implements Message{
 	 */
 	@Override
 	public String toString() {
-		return "LSPMessage [routerID=" + routerID + ", oif=" + oif + ", numSequence="
-				+ numSequence + ", lsp=" + lsp + "]";
+		return "[" + routerID + " : "
+				+ numSequence + ";" + oif + ", lsp=" + lsp + "]";
 	}
-    
-    
+	
 }

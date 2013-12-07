@@ -15,6 +15,7 @@ public class Node<I> {
 	public Node(I object, double value) {
 		super();
 		this.object = object;
+		
 		this.value = value;
 		this.next = this;
 		this.prev = this;

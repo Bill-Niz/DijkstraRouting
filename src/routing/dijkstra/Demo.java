@@ -65,8 +65,8 @@ public class Demo {
 				scheduler.runNextEvent();
 				Thread.sleep(100);
 			}*/
-			scheduler.runUntil(30);
-
+			scheduler.runUntil(20);
+			
 			// Display forwarding table for each node
 			FIBDumper.dumpForAllRouters(network);
 
@@ -81,6 +81,9 @@ public class Demo {
 				w.close();
 			}
 
+			
+			((IPHost) network.getNodeByName("R3")).getIPLayer().getInterfaceByName("eth0").down();
+			
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
 			e.printStackTrace(System.err);

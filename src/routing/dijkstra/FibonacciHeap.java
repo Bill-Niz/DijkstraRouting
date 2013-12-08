@@ -8,7 +8,7 @@ import java.util.Stack;
 
 public class FibonacciHeap<I> {
 	
-	private static final double oneOverLogPhi = 1.0 / Math.log((1.0 + Math.sqrt(5.0)) / 2.0);
+	private static final double LogPhi = 1.0 / Math.log((1.0 + Math.sqrt(5.0)) / 2.0);
 	public Node<I> min;
 	public int n = 0;
 	
@@ -247,24 +247,30 @@ public class FibonacciHeap<I> {
 	
 	/**
 	 * CONSOLIDATE(H)
-	 *	for i:=0 to D(n[H]) Do A[i] := NIL
-	 * for each node w in the root list of H do x:= w
-	 *	d:= degree[x] while A[d] <> NIL
+	 *	for i:=0 to D(n[H]) 
+	 *		Do A[i] := NIL
+	 * for each node w in the root list of H 
+	 * 		do x:= w
+	 *	d:= degree[x] 
+	 *while A[d] <> NIL
 	 *	do y:=A[d]
 	 *	if value[x]>value[y]
-	 *	then exchange x<->y Fibonacci-Heap-Link(H, y, x) A[d]:=NIL
+	 *		then exchange x<->y 
+	 *	Fibonacci-Heap-Link(H, y, x)
+	 *  A[d]:=NIL
 	 *	d:=d+1 A[d]:=x
 	 *	min[H]:=NIL
 	 *	for i:=0 to D(n[H])
 	 * 	do if A[i]<> NIL
-	 * 	then add A[i] to the root list of H
-	 *	if min[H] = NIL or value[A[i]]<value[min[H]] then min[H]:= A[i]
+	 * 		then add A[i] to the root list of H
+	 *	if min[H] = NIL or value[A[i]]<value[min[H]] 
+	 *		then min[H]:= A[i]
 	 * 
 	 */
 	private void consolidate()
 	{
 		 int arraySize =
-		            ((int) Math.floor(Math.log(n) * oneOverLogPhi)) + 1;
+		            ((int) Math.floor(Math.log(n) * LogPhi)) + 1;
 
 		        List<Node<I>> array =
 		            new ArrayList<Node<I>>(arraySize);
@@ -274,20 +280,20 @@ public class FibonacciHeap<I> {
 		            array.add(null);
 		        }
 		        
-		        int numRoots = 0;
+		        int nbrRoots = 0;
 		        Node<I> x = min;
 
 		        if (x != null) {
-		            numRoots++;
+		            nbrRoots++;
 		            x = x.next;
 
 		            while (x != min) {
-		                numRoots++;
+		                nbrRoots++;
 		                x = x.next;
 		            }
 		        }
 
-		        while (numRoots > 0) {
+		        while (nbrRoots > 0) {
 		            
 		            int d = x.degree;
 		            Node<I> next = x.next;
@@ -310,7 +316,7 @@ public class FibonacciHeap<I> {
 		            }
 		            array.set(d, x);
 		            x = next;
-		            numRoots--;
+		            nbrRoots--;
 		        }
 
 		        min = null;

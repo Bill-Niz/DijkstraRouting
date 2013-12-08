@@ -9,6 +9,7 @@ package routing.dijkstra;
 import java.net.InterfaceAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Timer;
@@ -31,6 +32,7 @@ import reso.ip.IPLoopbackAdapter;
 import reso.ip.IPRouteEntry;
 import reso.ip.IPRouter;
 import reso.scheduler.AbstractEvent;
+import reso.utilities.FIBDumper;
 import routing.dijkstra.LSPMessage.LSPData;
 import routing.dijkstra.Node;
 
@@ -115,12 +117,14 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	 * @param LSDB
 	 * @param source
 	 */
-	private synchronized void dijkstra(Map<IPAddress, LSPMessage> LSDB, IPAddress source) {
+	private synchronized void dijkstra(Map<IPAddress, LSPMessage> LSDB,
+			IPAddress source) {
 
 		FibonacciHeap<LSPMessage> Q = new FibonacciHeap<LSPMessage>();
 
 		Map<IPAddress, Node<LSPMessage>> D = new HashMap<IPAddress, Node<LSPMessage>>();
-
+		LinkedHashMap<IPAddress, ArrayList<IPAddress>> bestPath = new LinkedHashMap<IPAddress, ArrayList<IPAddress>>();
+		
 		for (Entry<IPAddress, LSPMessage> entry : LSDB.entrySet()) {
 
 			IPAddress key = entry.getKey();
@@ -136,20 +140,21 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			Node<LSPMessage> u = Q.extractMin();
 			// Update FIB
 			this.table.put(u.object.getRouterID(),
-					new NeighborInfo(u.object.getRouterID(), (int) u.value,u.object.oif));
+					new NeighborInfo(u.object.getRouterID(), (int) u.value,
+							u.object.oif));
 			D.remove(u.object.getRouterID());
 
 			for (Entry<IPAddress, LSPData> v : u.object.getLsp().entrySet()) {
 
 				IPAddress key = v.getKey();
 				LSPData data = v.getValue();
-				
+
 				Node<LSPMessage> dv = D.get(key);
 				// relax(u,v)
 				if (dv != null) {
 					if (dv.value > u.value + data.metric) {
 						Q.decreaseKey(dv, u.value + data.metric);
-						dv.object.oif = neighborInfoList.get(data.routerID).oif;
+						dv.object.oif = this.router.getIPLayer().getInterfaceByName(data.oif.getName());
 					}
 
 				}
@@ -160,26 +165,28 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 
 		for (Entry<IPAddress, NeighborInfo> entry : this.table.entrySet()) {
 			try {
+
+				
 				
 				IPAddress key = entry.getKey();
 				NeighborInfo data = entry.getValue();
 
-				IPInterfaceAdapter ita = this.router.getIPLayer()
-						.getInterfaceByName(data.oif.getName());
-				
-				if (ita != null && !data.idRouter.equals(source))
-				{
-					
-					this.router.getIPLayer().addRoute(new DijkstraRouteEntry(data.idRouter, data.oif, PROTOCOL_NAME, data.metric));
+				IPInterfaceAdapter ita = this.router.getIPLayer().getInterfaceByName(data.oif.getName());
+
+				if (ita != null && !data.idRouter.equals(source)) {
+
+					this.router.getIPLayer().addRoute(
+							new DijkstraRouteEntry(data.idRouter, data.oif,
+									PROTOCOL_NAME, data.metric));
 				}
+				
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 		System.out.println(this.router + " - " + getRouterID());
-		System.out.println(this.table);
-		System.out.println("--------------------");
+		FIBDumper.dumpForHost(router);
 
 	}
 
@@ -199,6 +206,16 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		}
 	}
 
+	private IPInterfaceAdapter getLoopBack()
+	{
+		for (IPInterfaceAdapter iface : this.router.getIPLayer()
+				.getInterfaces()) {
+			if (iface instanceof IPLoopbackAdapter) {
+				return iface;
+			}
+		}
+		return null;
+	}
 	/**
 	 * 
 	 * @param src
@@ -207,17 +224,17 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	private void handleHello(IPInterfaceAdapter src, Datagram datagram) {
 		HelloMessage hello = (HelloMessage) datagram.getPayload();
 
-		//if (!this.neighborsList.contains(hello.getRouterID())) {
+		// if (!this.neighborsList.contains(hello.getRouterID())) {
+		if (!this.neighborsList.contains(hello.getRouterID()))
 			this.neighborsList.add(hello.getRouterID());
-			this.neighborInfoList.put(hello.getRouterID(), new NeighborInfo(
-					hello.getRouterID(), src.getMetric(), src));
-			System.out.println(this.router + "-" + getRouterID());
-			System.out.println(this.neighborInfoList);
-			System.out.println("-------------------\n");
+		this.neighborInfoList.put(hello.getRouterID(),
+				new NeighborInfo(hello.getRouterID(), src.getMetric(), src));
+		System.out.println(this.router + "-" + getRouterID());
+		System.out.println(this.neighborInfoList);
+		System.out.println("-------------------\n");
 
-		//}
+		// }
 
-		
 	}
 
 	/**
@@ -240,25 +257,25 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			e.printStackTrace();
 		}
 	}
+
 	/**
 	 * 
 	 */
-		private void sendLSP() {
-			IPInterfaceAdapter ifaceLoop = null;
+	private void sendLSP() {
+		IPInterfaceAdapter ifaceLoop = null;
 
-			for (IPInterfaceAdapter iface : router.getIPLayer()
-					.getInterfaces()) {
-				if (iface instanceof IPLoopbackAdapter) {
-					ifaceLoop = iface;
-					break;
-				}
+		for (IPInterfaceAdapter iface : router.getIPLayer().getInterfaces()) {
+			if (iface instanceof IPLoopbackAdapter) {
+				ifaceLoop = iface;
+				break;
 			}
-			LSPMessage firstLsp = creatLSP(getRouterID(), ifaceLoop, numSeq);
-			LSDB.put(getRouterID(), firstLsp);
-			this.sendLSP(ifaceLoop, firstLsp);
-			
 		}
-		
+		LSPMessage firstLsp = creatLSP(getRouterID(), ifaceLoop, numSeq);
+		LSDB.put(getRouterID(), firstLsp);
+		this.sendLSP(ifaceLoop, firstLsp);
+
+	}
+
 	/**
 	 * 
 	 * @param src
@@ -308,7 +325,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 
 			@Override
 			protected void run() throws Exception {
-				
+
 				sendLSP();
 			}
 		};
@@ -346,7 +363,8 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		LSPMessage lspMsg = (LSPMessage) datagram.getPayload();
 		if ((LSDB.get(lspMsg.getRouterID()) == null)) {
 			LSDB.put(lspMsg.getRouterID(), lspMsg);
-		} else if (LSDB.get(lspMsg.getRouterID()).getNumSequence() < lspMsg.getNumSequence()) {
+		} else if (LSDB.get(lspMsg.getRouterID()).getNumSequence() < lspMsg
+				.getNumSequence()) {
 
 			LSDB.put(lspMsg.getRouterID(), lspMsg);
 		}
@@ -417,36 +435,33 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	@Override
 	public void attrChanged(Interface iface, String attr) {
 		System.out.println("attrChanged : on" + iface + " with " + attr);
-		if(IPInterfaceAdapter.STATE.equals(attr))
-		{
+		if (IPInterfaceAdapter.STATE.equals(attr)) {
 			this.numSeq++;
 			deleteNeighbor(iface);
 			sendLSP();
-			
+
 		}
-		if(IPInterfaceAdapter.ATTR_METRIC.equals(attr))
+		if (IPInterfaceAdapter.ATTR_METRIC.equals(attr))
 			sendHello();
-		
+
 	}
+
 	/**
 	 * 
 	 * @param iface
 	 */
-	private void deleteNeighbor(Interface iface)
-	{
-		for(Entry<IPAddress, NeighborInfo> entry : this.neighborInfoList.entrySet())
-		{
+	private void deleteNeighbor(Interface iface) {
+		for (Entry<IPAddress, NeighborInfo> entry : this.neighborInfoList
+				.entrySet()) {
 			IPAddress key = entry.getKey();
 			NeighborInfo value = entry.getValue();
-			
-			if(value.oif.equals(iface))
-			{
+
+			if (value.oif.equals(iface)) {
 				this.neighborsList.remove(key);
 				this.neighborInfoList.remove(key);
 				break;
 			}
 		}
 	}
-
 
 }

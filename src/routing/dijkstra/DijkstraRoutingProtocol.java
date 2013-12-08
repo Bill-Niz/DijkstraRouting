@@ -123,7 +123,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		FibonacciHeap<LSPMessage> Q = new FibonacciHeap<LSPMessage>();
 
 		Map<IPAddress, Node<LSPMessage>> D = new HashMap<IPAddress, Node<LSPMessage>>();
-		LinkedHashMap<IPAddress, ArrayList<IPAddress>> bestPath = new LinkedHashMap<IPAddress, ArrayList<IPAddress>>();
+		
 		
 		for (Entry<IPAddress, LSPMessage> entry : LSDB.entrySet()) {
 

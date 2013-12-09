@@ -178,9 +178,11 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				IPAddress key = entry.getKey();
 				NeighborInfo data = entry.getValue();
 				LinkedList<IPAddress> revBest = reverseTable.get(key);
+				
 				if ( !data.idRouter.equals(source) && revBest !=null) {
 					
-					IPAddress revIp = revBest.get(revBest.size()-1);
+					IPAddress revIp = this.computeReversePath(reverseTable, key);//revBest.get(revBest.size()-1);
+					
 					NeighborInfo revD = (revIp.equals(source)) ? this.neighborInfoList.get(key) : this.neighborInfoList.get(revIp);
 					IPInterfaceAdapter ita = null;
 					if(revD != null)
@@ -195,9 +197,37 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				e.printStackTrace();
 			}
 		}
+		/*
 		System.out.println(this.router + " - " + getRouterID());
-		System.out.println(this.neighborInfoList);
+		System.out.println(this.neighborInfoList);*/
 
+	}
+	/***
+	 * 
+	 * @param reverseTable
+	 * @param destination
+	 * @return
+	 */
+	public IPAddress computeReversePath(LinkedHashMap<IPAddress, LinkedList<IPAddress>> reverseTable , IPAddress destination)
+	{
+		
+		IPAddress bestIp = null;
+		
+		LinkedList<IPAddress> revBest = reverseTable.get(destination);
+		IPAddress ip = revBest.get(revBest.size()-1);
+		bestIp = ip;
+		
+		while(true)
+		{
+			if(this.router.getIPLayer().hasAddress(ip))
+				break;
+			bestIp = ip;
+			revBest = reverseTable.get(ip);
+			ip = revBest.get(revBest.size()-1);	
+			
+		}
+		
+		return bestIp;
 	}
 
 	/**
@@ -239,9 +269,12 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			this.neighborsList.add(hello.getRouterID());
 		this.neighborInfoList.put(hello.getRouterID(),
 				new NeighborInfo(hello.getRouterID(), src.getMetric(), src));
+		System.out.println("-------------------\n");
+		System.out.printf("--------- TTL : %d ----------\n",datagram.getTTL());
 		System.out.println(this.router + "-" + getRouterID());
 		System.out.println(this.neighborInfoList);
 		System.out.println("-------------------\n");
+		
 
 		// }
 
@@ -259,9 +292,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				}
 				HelloMessage helloMsg = new HelloMessage(getRouterID(),
 						this.neighborsList);
-				iface.send(new Datagram(iface.getAddress(),
-						IPAddress.BROADCAST, IP_PROTO_DIJKSTRA, 1, helloMsg),
-						null);
+				iface.send(new Datagram(iface.getAddress(),IPAddress.BROADCAST, IP_PROTO_DIJKSTRA, 1, helloMsg),null);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -305,8 +336,9 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	 * @throws Exception
 	 */
 	private void initHelloTimer() throws Exception {
+		
 		this.helloTimer = new AbstractTimer(this.router.getNetwork().scheduler,
-				HELLOInstervalTime, false) {
+				HELLOInstervalTime, true) {
 
 			@Override
 			protected void run() throws Exception {
@@ -364,15 +396,18 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	private void handleLSP(IPInterfaceAdapter src, Datagram datagram) {
 
 		LSPMessage lspMsg = (LSPMessage) datagram.getPayload();
+		
 		if ((LSDB.get(lspMsg.getRouterID()) == null)) {
 			LSDB.put(lspMsg.getRouterID(), lspMsg);
+			sendLSP(src, lspMsg);
+			
 		} else if (LSDB.get(lspMsg.getRouterID()).getNumSequence() < lspMsg
-				.getNumSequence()) {
+				.getNumSequence() && ! this.router.getIPLayer().hasAddress(lspMsg.getRouterID())) {
 
 			LSDB.put(lspMsg.getRouterID(), lspMsg);
+			sendLSP(src, lspMsg);
 		}
-		sendLSP(src, lspMsg);
-
+	
 		this.dijkstra(LSDB, getRouterID());
 
 	}
@@ -420,14 +455,21 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	@Override
 	public void receive(IPInterfaceAdapter src, Datagram datagram)
 			throws Exception {
-		// System.out.println(this.router + " : receive on " + src + " data :  "
-		// + datagram.getPayload());
+		 
 
 		if (datagram.getPayload() instanceof HelloMessage)
+		{
+			System.out.println(this.router + " : receive HELLO on " + src + " data :  "
+					 + datagram.getPayload());
 			this.handleHello(src, datagram);
+		}
 
 		if (datagram.getPayload() instanceof LSPMessage)
+		{
+			System.out.println(this.router + " : receive LSP on " + src + " data :  "
+					 + datagram.getPayload());
 			this.handleLSP(src, datagram);
+		}
 
 	}
 

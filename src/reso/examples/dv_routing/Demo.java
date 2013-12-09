@@ -32,7 +32,7 @@ import reso.utilities.NetworkGrapher;
 
 public class Demo {
 	
-	public static final String TOPO_FILE= "reso/data/topology-min2.txt";
+	public static final String TOPO_FILE= "reso/data/topology.txt";
 	
 	private static IPAddress getRouterID(IPLayer ip) {
 		IPAddress routerID= null;

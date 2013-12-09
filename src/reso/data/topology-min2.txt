@@ -11,9 +11,11 @@ router R3
 	eth 191.168.3.3
 	eth 191.168.255.3
 	eth 191.168.4.4
+	eth 191.168.5.3
 router R4
 	lo 10.0.0.4
 	eth 191.168.4.4
+	eth 191.168.5.4
 link R1 eth0 R2 eth0 5000000
 	metric 5 2
 link R1 eth1 R3 eth0 5000000
@@ -21,4 +23,6 @@ link R1 eth1 R3 eth0 5000000
 link R2 eth1 R3 eth1 5000000
 	metric 3 1
 link R4 eth0 R3 eth2 5000000
+	metric 1 1
+link R4 eth1 R3 eth3 5000000
 	metric 1 1

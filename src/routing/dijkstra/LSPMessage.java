@@ -26,6 +26,7 @@ public class LSPMessage implements Message{
     
 	public static class LSPData
 	{
+		public byte numAdj;
 		public IPAddress routerID;
 		public int metric;
 		public  IPInterfaceAdapter oif;
@@ -36,6 +37,7 @@ public class LSPMessage implements Message{
 		 */
 		public LSPData(IPAddress routerID, int metric, IPInterfaceAdapter oif) {
 			super();
+			
 			this.routerID = routerID;
 			this.metric = metric;
 			this.oif = oif;

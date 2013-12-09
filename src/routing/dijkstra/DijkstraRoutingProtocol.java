@@ -131,16 +131,19 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		while (!Q.isEmpty()) {
 			Node<LSPMessage> u = Q.extractMin();
 			// Update FIB
-			NeighborInfo tData = this.table.get(u.object.getRouterID());
-			if( tData == null){
-			this.table.put(u.object.getRouterID(),
-					new NeighborInfo(u.object.getRouterID(), (int) u.value,
-							u.object.oif));
-			}else if (tData.metric > u.value) {
+			if(!this.router.getIPLayer().hasAddress(u.object.getRouterID()))
+			{
+				NeighborInfo tData = this.table.get(u.object.getRouterID());
+				if( tData == null){
 				this.table.put(u.object.getRouterID(),
 						new NeighborInfo(u.object.getRouterID(), (int) u.value,
 								u.object.oif));
-				this.router.getIPLayer().removeRoute(u.object.getRouterID());
+				}else if (tData.metric > u.value) {
+					this.table.put(u.object.getRouterID(),
+							new NeighborInfo(u.object.getRouterID(), (int) u.value,
+									u.object.oif));
+					this.router.getIPLayer().removeRoute(u.object.getRouterID());
+				}
 			}
 			
 			D.remove(u.object.getRouterID());
@@ -174,11 +177,11 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 
 				IPAddress key = entry.getKey();
 				NeighborInfo data = entry.getValue();
-				
-				if ( !data.idRouter.equals(source)) {
-					LinkedList<IPAddress> revBest = reverseTable.get(key);
+				LinkedList<IPAddress> revBest = reverseTable.get(key);
+				if ( !data.idRouter.equals(source) && revBest !=null) {
+					
 					IPAddress revIp = revBest.get(revBest.size()-1);
-					NeighborInfo revD = (revIp.equals(source))?this.neighborInfoList.get(key):this.neighborInfoList.get(revIp);
+					NeighborInfo revD = (revIp.equals(source)) ? this.neighborInfoList.get(key) : this.neighborInfoList.get(revIp);
 					IPInterfaceAdapter ita = null;
 					if(revD != null)
 					 ita = revD.oif;
@@ -193,7 +196,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			}
 		}
 		System.out.println(this.router + " - " + getRouterID());
-		FIBDumper.dumpForHost(router);
+		System.out.println(this.neighborInfoList);
 
 	}
 

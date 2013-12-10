@@ -22,7 +22,7 @@ import reso.utilities.NetworkGrapher;
 
 public class Demo {
 	public static final String TOPO_FILE = "reso/data/topology.txt";
-	public static int HELLOIntervalTime = 1;
+	public static int HELLOIntervalTime = 2;
 	public static int LSPIntervalTime = 40;
 
 	private static IPAddress getRouterID(IPLayer ip) {
@@ -60,19 +60,14 @@ public class Demo {
 						HELLOIntervalTime, LSPIntervalTime));
 				router.start();
 			}
-
-			/*while (scheduler.hasMoreEvents()) {
-				scheduler.runNextEvent();
-				Thread.sleep(100);
-			}*/
+			 
 			scheduler.runUntil(100);
 			
 			// Display forwarding table for each node
 			FIBDumper.dumpForAllRouters(network);
 
 			for (Node n : network.getNodes()) {
-				// IPAddress ndst= ((IPHost)
-				// n).getIPLayer().getInterfaceByName("lo0").getAddress();
+				 
 				IPAddress ndst = getRouterID(((IPHost) n).getIPLayer());
 				File f = new File("topology-routing-" + ndst + ".dot");
 				System.out.println("Writing file " + f);
@@ -81,7 +76,7 @@ public class Demo {
 				w.close();
 			}
 
-			((IPHost) network.getNodeByName("R3")).getIPLayer().getInterfaceByName("eth0").down();
+			
 			
 		} catch (Exception e) {
 			System.err.println(e.getMessage());

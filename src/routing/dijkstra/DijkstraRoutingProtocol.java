@@ -108,8 +108,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	 * @param LSDB
 	 * @param source
 	 */
-	private   void dijkstra(Map<IPAddress, LSPMessage> LSDB,
-			IPAddress source) {
+	private   void dijkstra(Map<IPAddress, LSPMessage> LSDB,IPAddress source) {
 
 		FibonacciHeap<LSPMessage> Q = new FibonacciHeap<LSPMessage>();
 
@@ -193,13 +192,10 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				}
 				
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
+				
 				e.printStackTrace();
 			}
 		}
-		/*
-		System.out.println(this.router + " - " + getRouterID());
-		System.out.println(this.neighborInfoList);*/
 
 	}
 	/***
@@ -264,19 +260,19 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	private void handleHello(IPInterfaceAdapter src, Datagram datagram) {
 		HelloMessage hello = (HelloMessage) datagram.getPayload();
 
-		// if (!this.neighborsList.contains(hello.getRouterID())) {
 		if (!this.neighborsList.contains(hello.getRouterID()))
+		{
 			this.neighborsList.add(hello.getRouterID());
 		this.neighborInfoList.put(hello.getRouterID(),
 				new NeighborInfo(hello.getRouterID(), src.getMetric(), src));
-		System.out.println("-------------------\n");
-		System.out.printf("--------- TTL : %d ----------\n",datagram.getTTL());
-		System.out.println(this.router + "-" + getRouterID());
-		System.out.println(this.neighborInfoList);
-		System.out.println("-------------------\n");
-		
-
-		// }
+		}else 
+		{
+			NeighborInfo nInfo = this.neighborInfoList.get(hello.getRouterID());
+			if(nInfo.metric > src.getMetric())
+				this.neighborInfoList.put(hello.getRouterID(),
+						new NeighborInfo(hello.getRouterID(), src.getMetric(), src));
+				
+		}
 
 	}
 

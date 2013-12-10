@@ -8,8 +8,8 @@ graph "reso" {
   "R4" [shape=circle] ;
   "R5" [shape=circle] ;
   "R4" -- "R1" [headlabel="eth0", taillabel="eth0", dir="both", arrowtail=none, arrowhead=empty, penwidth=3] ;
-  "R2" -- "R1" [headlabel="eth1", taillabel="eth0", dir="both", arrowtail=none, arrowhead=empty, penwidth=3] ;
-  "R2" -- "R1" [headlabel="eth2", taillabel="eth3", dir="both", arrowtail=none, arrowhead=none] ;
+  "R2" -- "R1" [headlabel="eth1", taillabel="eth0", dir="both", arrowtail=none, arrowhead=none] ;
+  "R2" -- "R1" [headlabel="eth2", taillabel="eth3", dir="both", arrowtail=none, arrowhead=empty, penwidth=3] ;
   "R5" -- "R2" [headlabel="eth1", taillabel="eth1", dir="both", arrowtail=none, arrowhead=none] ;
   "R3" -- "R2" [headlabel="eth2", taillabel="eth0", dir="both", arrowtail=none, arrowhead=empty, penwidth=3] ;
   "R5" -- "R3" [headlabel="eth1", taillabel="eth2", dir="both", arrowtail=none, arrowhead=empty, penwidth=3] ;

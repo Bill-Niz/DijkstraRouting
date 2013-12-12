@@ -62,7 +62,7 @@ public class HelloMessage implements Message {
 
 	@Override
 	public String toString() {
-		return "HelloMessage [routerID=" + routerID + ", neighborsList="
+		return "Hello [routerID=" + routerID + ", neighbors="
 				+ neighborsList + "]";
 	}
 	

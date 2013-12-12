@@ -22,8 +22,9 @@ import reso.utilities.NetworkGrapher;
 
 public class Demo {
 	public static final String TOPO_FILE = "reso/data/topology.txt";
-	public static int HELLOIntervalTime = 2;
-	public static int LSPIntervalTime = 40;
+	public static int HELLOIntervalTime = 1;
+	public static int LSPIntervalTime = 20;
+	public static int LSPAGEIntervalTime = 40;
 
 	private static IPAddress getRouterID(IPLayer ip) {
 		IPAddress routerID = null;

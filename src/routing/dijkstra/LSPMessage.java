@@ -21,6 +21,7 @@ public class LSPMessage implements Message{
 	
 	private final IPAddress routerID;
 	private int numSequence;
+	public int age;
 	public IPInterfaceAdapter oif;
     private final Map<IPAddress,LSPData> lsp;
     
@@ -30,6 +31,7 @@ public class LSPMessage implements Message{
 		public IPAddress routerID;
 		public int metric;
 		public  IPInterfaceAdapter oif;
+		
 		/**
 		 * @param routerID
 		 * @param metric
@@ -60,12 +62,13 @@ public class LSPMessage implements Message{
 	 * @param lsp
 	 */
 	public LSPMessage(IPAddress routerID, IPInterfaceAdapter oif, int numSequence,
-			Map<IPAddress, LSPData> lsp) {
+			Map<IPAddress, LSPData> lsp,int age) {
 		super();
 		this.oif = oif;
 		this.routerID = routerID;
 		this.numSequence = numSequence;
 		this.lsp = lsp;
+		this.age = age;
 	}
 
 	/**

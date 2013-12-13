@@ -1,45 +1,51 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ The MIT License (MIT)
+
+Copyright (c) 2013 Bill Nizeyimana
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
  */
 
 package routing.dijkstra;
 
-import java.net.InterfaceAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import reso.common.AbstractApplication;
 import reso.common.AbstractTimer;
-import reso.common.Host;
 import reso.common.Interface;
 import reso.common.InterfaceAttrListener;
-import reso.common.Message;
-import reso.examples.dv_routing.DVMessage;
-import reso.examples.dv_routing.DVRoutingEntry;
 import reso.ip.Datagram;
 import reso.ip.IPAddress;
 import reso.ip.IPInterfaceAdapter;
 import reso.ip.IPInterfaceListener;
-import reso.ip.IPLayer;
 import reso.ip.IPLoopbackAdapter;
-import reso.ip.IPRouteEntry;
 import reso.ip.IPRouter;
-import reso.scheduler.AbstractEvent;
-import reso.utilities.FIBDumper;
 import routing.dijkstra.LSPMessage.LSPData;
-import routing.dijkstra.Node;
 
 /**
  * 
- * @author billniz
+ * @author Bill Nizeyimana
  */
 public class DijkstraRoutingProtocol extends AbstractApplication implements
 		IPInterfaceListener, InterfaceAttrListener {
@@ -133,21 +139,8 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		while (!Q.isEmpty()) {
 			Node<LSPMessage> u = Q.extractMin();
 			// Update RIB
-			if (!this.router.getIPLayer().hasAddress(u.object.getRouterID())) {
-				NeighborInfo tData = this.table.get(u.object.getRouterID());
-				if (tData == null) {
-					this.table.put(u.object.getRouterID(),
-							new NeighborInfo(u.object.getRouterID(),
-									(int) u.value, u.object.oif));
-				} else if (tData.metric > u.value) {
-					this.table.put(u.object.getRouterID(),
-							new NeighborInfo(u.object.getRouterID(),
-									(int) u.value, u.object.oif));
-					this.router.getIPLayer()
-							.removeRoute(u.object.getRouterID());
-				}
-			}
-
+			updateRIB(u);
+			
 			D.remove(u.object.getRouterID());
 
 			for (Entry<IPAddress, LSPData> v : u.object.getLsp().entrySet()) {
@@ -173,7 +166,31 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			}
 
 		}
+		updateFIB(reverseTable);
+	}
+	/**
+	 * 
+	 * @param u
+	 */
+	private void updateRIB(Node<LSPMessage> u)
+	{
+		if (!this.router.getIPLayer().hasAddress(u.object.getRouterID())) {
+			NeighborInfo tData = this.table.get(u.object.getRouterID());
+			if (tData == null) {
+				this.table.put(u.object.getRouterID(),new NeighborInfo(u.object.getRouterID(),(int) u.value, u.object.oif));
+			} else if (tData.metric > u.value) {
+				this.table.put(u.object.getRouterID(),new NeighborInfo(u.object.getRouterID(),(int) u.value, u.object.oif));
+				this.router.getIPLayer().removeRoute(u.object.getRouterID());
+			}
+		}
 
+	}
+	/**
+	 * 
+	 * @param reverseTable
+	 */
+	private void updateFIB(LinkedHashMap<IPAddress, LinkedList<IPAddress>> reverseTable)
+	{
 		for (Entry<IPAddress, NeighborInfo> entry : this.table.entrySet()) {
 			try {
 
@@ -181,12 +198,12 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				NeighborInfo data = entry.getValue();
 				LinkedList<IPAddress> revBest = reverseTable.get(key);
 
-				if (!data.idRouter.equals(source) && revBest != null) {
+				if (!this.router.getIPLayer().hasAddress(data.idRouter) && revBest != null) {
 
 					IPAddress revIp = this
 							.computeReversePath(reverseTable, key);
 
-					NeighborInfo revD = (revIp.equals(source)) ? this.neighborInfoList
+					NeighborInfo revD = this.router.getIPLayer().hasAddress(revIp) ? this.neighborInfoList
 							.get(key) : this.neighborInfoList.get(revIp);
 					IPInterfaceAdapter ita = null;
 					if (revD != null)
@@ -201,9 +218,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				e.printStackTrace();
 			}
 		}
-
 	}
-
 	/***
 	 * 
 	 * @param reverseTable
@@ -230,23 +245,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 
 		return bestIp;
 	}
-
-	/**
-	 * 
-	 * @param m
-	 * @throws Exception
-	 */
-	private void sendToNeighbors(Message m) throws Exception {
-		for (IPInterfaceAdapter iface : this.router.getIPLayer()
-				.getInterfaces()) {
-			if (iface instanceof IPLoopbackAdapter) {
-				continue;
-			}
-			iface.send(new Datagram(iface.getAddress(), IPAddress.BROADCAST,
-					IP_PROTO_DIJKSTRA, 1, m), null);
-		}
-	}
-
 	/**
 	 * 
 	 * @return
@@ -266,6 +264,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	 * 
 	 * @param src
 	 *            the IP interface where the datagrams are received
+	 *            
 	 * @param datagram
 	 *            the received datagram
 	 */
@@ -277,6 +276,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			this.neighborsList.add(hello.getRouterID());
 			this.neighborInfoList.put(hello.getRouterID(), new NeighborInfo(
 					hello.getRouterID(), src.getMetric(), src));
+			this.sendHello();
 		} else {
 
 			NeighborInfo nInfo = this.neighborInfoList.get(hello.getRouterID());
@@ -341,7 +341,35 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			e.printStackTrace();
 		}
 	}
+	/**
+	 * This method process the incoming LSP datagrams
+	 * 
+	 * @param src the IP interface where the datagrams are received
+	 * 
+	 * @param datagram the received datagram
+	 */
+	private void handleLSP(IPInterfaceAdapter src, Datagram datagram) {
 
+		synchronized (this.LSDB) {
+			LSPMessage lspMsg = (LSPMessage) datagram.getPayload();
+
+			if ((LSDB.get(lspMsg.getRouterID()) == null)) {
+				LSDB.put(lspMsg.getRouterID(), lspMsg);
+				sendLSP(src, lspMsg);
+
+			} else if (LSDB.get(lspMsg.getRouterID()).getNumSequence() < lspMsg
+					.getNumSequence()
+					&& !this.router.getIPLayer().hasAddress(
+							lspMsg.getRouterID())) {
+
+				LSDB.put(lspMsg.getRouterID(), lspMsg);
+				sendLSP(src, lspMsg);
+			}
+		}
+
+		this.dijkstra(LSDB, getRouterID());
+
+	}
 	/**
 	 * 
 	 * @throws Exception
@@ -377,7 +405,43 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		};
 		this.LSPTimer.start();
 	}
+	/**
+	 * 
+	 */
+	private void initAGEINGTimer() {
 
+		this.AGEINGTimer = new AbstractTimer(
+				this.router.getNetwork().scheduler, 2, true) {
+
+			@Override
+			protected void run() throws Exception {
+
+				handleLSPAgeing();
+			}
+		};
+		this.AGEINGTimer.start();
+	}
+
+	/**
+	 * 
+	 */
+	protected void handleLSPAgeing() {
+
+		synchronized (this.LSDB) {
+			for (Entry<IPAddress, LSPMessage> entry : this.LSDB.entrySet()) {
+				IPAddress key = entry.getKey();
+				LSPMessage value = entry.getValue();
+
+				if(!this.router.getIPLayer().hasAddress(key))
+				{
+					if (value.age == 0)
+						this.LSDB.remove(key);
+					else
+						value.age -= 1;
+				}
+			}
+		}
+	}
 	/**
 	 * 
 	 * @param ipSrc
@@ -399,35 +463,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				this.AGEINGInstervalTime);
 		return lspMsg;
 	}
-
-	/**
-	 * 
-	 * @param src
-	 * @param datagram
-	 */
-	private void handleLSP(IPInterfaceAdapter src, Datagram datagram) {
-
-		synchronized (this.LSDB) {
-			LSPMessage lspMsg = (LSPMessage) datagram.getPayload();
-
-			if ((LSDB.get(lspMsg.getRouterID()) == null)) {
-				LSDB.put(lspMsg.getRouterID(), lspMsg);
-				sendLSP(src, lspMsg);
-
-			} else if (LSDB.get(lspMsg.getRouterID()).getNumSequence() < lspMsg
-					.getNumSequence()
-					&& !this.router.getIPLayer().hasAddress(
-							lspMsg.getRouterID())) {
-
-				LSDB.put(lspMsg.getRouterID(), lspMsg);
-				sendLSP(src, lspMsg);
-			}
-		}
-
-		this.dijkstra(LSDB, getRouterID());
-
-	}
-
 	/**
 	 * 
 	 * @return
@@ -457,43 +492,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		initLSPTimer();
 		initAGEINGTimer();
 	}
-
-	/**
-	 * 
-	 */
-	private void initAGEINGTimer() {
-
-		this.AGEINGTimer = new AbstractTimer(
-				this.router.getNetwork().scheduler, 2, true) {
-
-			@Override
-			protected void run() throws Exception {
-
-				handleLSPAgeing();
-			}
-		};
-		this.AGEINGTimer.start();
-	}
-
-	/**
-	 * 
-	 */
-	protected void handleLSPAgeing() {
-
-		synchronized (this.LSDB) {
-			for (Entry<IPAddress, LSPMessage> entry : this.LSDB.entrySet()) {
-				IPAddress key = entry.getKey();
-				LSPMessage value = entry.getValue();
-
-				if (value.age == 0)
-					this.LSDB.remove(key);
-				else
-					value.age -= 1;
-			}
-		}
-
-	}
-
 	@Override
 	public void stop() {
 		this.router.getIPLayer().removeListener(IP_PROTO_DIJKSTRA, this);
@@ -506,25 +504,23 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		this.AGEINGTimer.stop();
 
 	}
-
 	@Override
 	public void receive(IPInterfaceAdapter src, Datagram datagram)
 			throws Exception {
 
 		if (datagram.getPayload() instanceof HelloMessage) {
-			System.out.println(this.router + " : receive HELLO on " + src
-					+ " data :  " + datagram.getPayload());
+			System.out.println( getCurrrentTime() +". "+ this.router + "- HELLO on " + src
+					+ ", src=" + datagram.src + " => " +datagram.getPayload() + "\n");
 			this.handleHello(src, datagram);
 		}
 
 		if (datagram.getPayload() instanceof LSPMessage) {
-			System.out.println(this.router + " : receive LSP on " + src
-					+ " data :  " + datagram.getPayload());
+			System.out.println( getCurrrentTime() +". "+ this.router + "- on " + src
+					+ ", src=" + datagram.src + " => " +datagram.getPayload() + "\n");
 			this.handleLSP(src, datagram);
 		}
 
 	}
-
 	@Override
 	public void attrChanged(Interface iface, String attr) {
 		System.out.println("attrChanged : on " + iface + " with " + attr);
@@ -545,7 +541,14 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		}
 
 	}
-
+/**
+ * 
+ * @return
+ */
+	private String getCurrrentTime()
+	{
+		return ((double) (host.getNetwork().getScheduler().getCurrentTime())) + " s";
+	}
 	/**
 	 * 
 	 * @param iface

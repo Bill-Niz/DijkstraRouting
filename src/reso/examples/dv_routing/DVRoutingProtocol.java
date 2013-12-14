@@ -145,7 +145,7 @@ public class DVRoutingProtocol
                 + host.name + " " + iface + " " + msg);
 
         DVMessage dvm = (DVMessage) msg.getPayload();
-
+        
         for (DVMessage.DV dv : dvm.dvs) {
 
             // Filter local addresses

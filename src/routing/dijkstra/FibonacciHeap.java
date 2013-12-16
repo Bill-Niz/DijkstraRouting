@@ -146,7 +146,6 @@ public class FibonacciHeap<I> {
             while (kids > 0) {
                 tempnext = x.next;
 
-                
                 x.prev.next = x.next;
                 x.next.prev = x.prev;
 
@@ -268,8 +267,6 @@ public class FibonacciHeap<I> {
 	            }
 	        }
 	}
-	
-	
 	/**
 	 * CONSOLIDATE(H)
 	 *	for i:=0 to D(n[H]) 

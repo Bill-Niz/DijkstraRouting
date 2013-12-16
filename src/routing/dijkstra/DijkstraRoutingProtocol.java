@@ -62,7 +62,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	private AbstractTimer AGEINGTimer;
 	private int numSeq = 0;
 
-	private ArrayList<IPAddress> neighborsList = new ArrayList<>();
+	private ArrayList<HelloMessage.HelloData> neighborsList = new ArrayList<>();
 	private Map<IPAddress, NeighborInfo> neighborInfoList = new HashMap<IPAddress, NeighborInfo>();
 	private final Map<IPAddress, LSPMessage> LSDB = new HashMap<IPAddress, LSPMessage>();
 	private Map<IPAddress, NeighborInfo> table = new HashMap<IPAddress, NeighborInfo>();
@@ -188,7 +188,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		}
 
 	}
-
 	/**
 	 * 
 	 * @param reverseTable
@@ -225,7 +224,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			}
 		}
 	}
-
 	/***
 	 * 
 	 * @param reverseTable
@@ -279,8 +277,8 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	private void handleHello(IPInterfaceAdapter src, Datagram datagram) {
 		HelloMessage hello = (HelloMessage) datagram.getPayload();
 
-		if (!this.neighborsList.contains(hello.getRouterID())) {
-			this.neighborsList.add(hello.getRouterID());
+		if (!this.isInTempNeighborsList(hello.getRouterID())) {
+			this.neighborsList.add(new HelloMessage.HelloData(hello.getRouterID(), src.getMetric()));
 			this.sendHello();
 		} else {
 
@@ -297,11 +295,44 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				this.neighborInfoList.put(hello.getRouterID(), new NeighborInfo(
 						hello.getRouterID(), src.getMetric(), src));
 			}
-
 		}
-
 	}
-
+/**
+ * 
+ * @param idRouter
+ * @return
+ */
+	private boolean isInTempNeighborsList(IPAddress idRouter)
+	{
+		
+		boolean isIn = false;
+		for(HelloMessage.HelloData data : this.neighborsList)
+		{	
+			if(data.getRouterID().equals(idRouter));
+			{
+				isIn = true;
+				break;
+			}
+		}
+		return isIn;
+	}
+	/**
+	 * 
+	 * @param idRouter
+	 */
+		private void deleteInTempNeighborsList(IPAddress idRouter)
+		{
+			
+			boolean isIn = false;
+			for(HelloMessage.HelloData data : this.neighborsList)
+			{	
+				if(data.getRouterID().equals(idRouter));
+				{
+					this.neighborsList.remove(data);
+				}
+			}
+			
+		}
 	/**
 	 * 
 	 */
@@ -382,9 +413,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				sendLSP(src, lspMsg);
 			}
 		}
-
 		this.dijkstra(LSDB, getRouterID());
-
 	}
 
 	/**
@@ -405,7 +434,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		this.helloTimer.start();
 
 	}
-
 	/**
 	 * 
 	 */
@@ -422,7 +450,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		};
 		this.LSPTimer.start();
 	}
-
 	/**
 	 * 
 	 */
@@ -439,7 +466,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		};
 		this.AGEINGTimer.start();
 	}
-
 	/**
 	 * 
 	 */
@@ -459,7 +485,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			}
 		}
 	}
-
 	/**
 	 * 
 	 * @param ipSrc
@@ -563,9 +588,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		default:
 			break;
 		}
-
 	}
-
 	/**
 	 * 
 	 * @return
@@ -574,7 +597,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		return ((double) (host.getNetwork().getScheduler().getCurrentTime()))
 				+ " s";
 	}
-
 	/**
 	 * 
 	 * @param iface
@@ -586,7 +608,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			NeighborInfo value = entry.getValue();
 
 			if (value.oif.equals(iface)) {
-				this.neighborsList.remove(key);
+				this.deleteInTempNeighborsList(key);
 				this.neighborInfoList.remove(key);
 				break;
 			}

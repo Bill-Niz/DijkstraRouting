@@ -47,9 +47,6 @@ public class Demo {
 	public static int HELLOIntervalTime = 1;
 	public static int LSPIntervalTime = 20;
 	public static int LSPAGEIntervalTime = 40;
-
-	
-
 	/**
 	 * 
 	 * @param args

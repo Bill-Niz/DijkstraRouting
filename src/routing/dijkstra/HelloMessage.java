@@ -37,11 +37,43 @@ public class HelloMessage implements Message {
 	private IPAddress routerID;
 	@SuppressWarnings("unused")
 	private byte numNeighbor = 0;
-	
-
-	private ArrayList<IPAddress> neighborsList = new ArrayList<>();
+	private ArrayList<HelloData> neighborsList = new ArrayList<>();
 	
 	
+	public static class HelloData
+	{
+		private IPAddress routerID;
+		private int cost;
+		/**
+		 * @param routerID
+		 * @param cost
+		 */
+		public HelloData(IPAddress routerID, int cost) {
+			super();
+			this.routerID = routerID;
+			this.cost = cost;
+		}
+		/**
+		 * @return the routerID
+		 */
+		public IPAddress getRouterID() {
+			return routerID;
+		}
+		/**
+		 * @return the cost
+		 */
+		public int getCost() {
+			return cost;
+		}
+		/* (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return "[routerID=" + routerID + ", cost=" + cost + "]";
+		}
+		
+	}
 	
 	public IPAddress getRouterID() {
 		return routerID;
@@ -62,13 +94,13 @@ public class HelloMessage implements Message {
 	/**
 	 * @return the neighborsList
 	 */
-	public ArrayList<IPAddress> getNeighborsList() {
+	public ArrayList<HelloData> getNeighborsList() {
 		return neighborsList;
 	}
 	/**
 	 * @param neighborsList the neighborsList to set
 	 */
-	public void setNeighborsList(ArrayList<IPAddress> neighborsList) {
+	public void setNeighborsList(ArrayList<HelloData> neighborsList) {
 		this.neighborsList = neighborsList;
 	}
 	/**
@@ -76,17 +108,22 @@ public class HelloMessage implements Message {
 	 * @param routerID
 	 * @param neighborsList
 	 */
-	public HelloMessage(IPAddress routerID, ArrayList<IPAddress> neighborsList) {
+	public HelloMessage(IPAddress routerID, ArrayList<HelloData> neighborsList) {
 		super();
 		this.routerID = routerID;
 		this.neighborsList = neighborsList;
+		this.numNeighbor = (byte)this.neighborsList.size();
 	
 	}
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString() {
-		return "Hello [routerID=" + routerID + ", neighbors="
-				+ neighborsList + "]";
+		return "HelloMessage [routerID=" + routerID + ", numNeighbor="
+				+ numNeighbor + ", neighborsList=" + neighborsList + "]";
 	}
+	
 	
 	
 }

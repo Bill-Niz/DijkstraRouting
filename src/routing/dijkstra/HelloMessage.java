@@ -35,7 +35,6 @@ import reso.ip.IPAddress;
 public class HelloMessage implements Message {
 	
 	private IPAddress routerID;
-	@SuppressWarnings("unused")
 	private byte numNeighbor = 0;
 	private ArrayList<HelloData> neighborsList = new ArrayList<>();
 	

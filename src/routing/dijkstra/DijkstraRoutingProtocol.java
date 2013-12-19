@@ -204,8 +204,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				if (!this.router.getIPLayer().hasAddress(data.idRouter)
 						&& revBest != null) {
 
-					IPAddress revIp = this
-							.computeReversePath(reverseTable, key);
+					IPAddress revIp = this.computeReversePath(reverseTable, key);
 
 					NeighborInfo revD = this.router.getIPLayer().hasAddress(
 							revIp) ? this.neighborInfoList.get(key)
@@ -322,8 +321,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	 */
 		private void deleteInTempNeighborsList(IPAddress idRouter)
 		{
-			
-			boolean isIn = false;
 			for(HelloMessage.HelloData data : this.neighborsList)
 			{	
 				if(data.getRouterID().equals(idRouter));
@@ -500,7 +497,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			IPAddress key = entry.getKey();
 			NeighborInfo value = entry.getValue();
 
-			lsp.put(key, new LSPMessage.LSPData(key, value.metric, value.oif));
+			lsp.put(key, new LSPMessage.LSPData(key, value.metric));
 		}
 		LSPMessage lspMsg = new LSPMessage(ipSrc, oif, numSequence, lsp,
 				this.AGEINGInstervalTime);

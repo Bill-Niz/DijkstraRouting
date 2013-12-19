@@ -38,40 +38,35 @@ public class LSPMessage implements Message{
 	
 	private final IPAddress routerID;
 	private int numSequence;
+	public byte numAdj = 0;
 	public int age;
 	public IPInterfaceAdapter oif;
     private final Map<IPAddress,LSPData> lsp;
     
 	public static class LSPData
 	{
-		public byte numAdj;
+		
 		public IPAddress routerID;
 		public int metric;
-		public  IPInterfaceAdapter oif;
 		
 		/**
 		 * @param routerID
 		 * @param metric
 		 * @param oif
 		 */
-		public LSPData(IPAddress routerID, int metric, IPInterfaceAdapter oif) {
+		public LSPData(IPAddress routerID, int metric) {
 			super();
 			
 			this.routerID = routerID;
 			this.metric = metric;
-			this.oif = oif;
-			
 		}
 		/* (non-Javadoc)
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
 		public String toString() {
-			return "[" + routerID + ":" + metric
-					+ ", oif=" + oif + "]";
+			return "[" + routerID + ":" + metric + "]";
 		}
-		
-		
 	}
 	/**
 	 * @param routerID

@@ -153,6 +153,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				// relax(u,v)
 				if (dv != null) {
 					if (dv.value > u.value + data.metric) {
+						
 						Q.decreaseKey(dv, u.value + data.metric);
 
 						LinkedList<IPAddress> revBest = reverseTable.get(key);

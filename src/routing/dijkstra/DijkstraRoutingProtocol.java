@@ -290,6 +290,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 							hello.getRouterID(),
 							new NeighborInfo(hello.getRouterID(), src
 									.getMetric(), src));
+				
 			}else
 			{
 				this.neighborInfoList.put(hello.getRouterID(), new NeighborInfo(
@@ -547,7 +548,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		this.AGEINGTimer.stop();
 
 	}
-
+	
 	@Override
 	public void receive(IPInterfaceAdapter src, Datagram datagram)
 			throws Exception {

@@ -73,7 +73,10 @@ public class HelloMessage implements Message {
 		}
 		
 	}
-	
+	/**
+	 * 
+	 * @return
+	 */
 	public IPAddress getRouterID() {
 		return routerID;
 	}

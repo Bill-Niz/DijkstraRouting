@@ -67,7 +67,7 @@ public class Demo {
 					continue;
 				IPRouter router = (IPRouter) n;
 				router.addApplication(new DijkstraRoutingProtocol(router,
-						HELLOIntervalTime, LSPIntervalTime));
+						HELLOIntervalTime, LSPIntervalTime,LSPAGEIntervalTime));
 				router.start();
 			}
 			 

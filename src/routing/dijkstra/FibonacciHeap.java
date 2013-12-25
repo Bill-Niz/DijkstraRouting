@@ -182,6 +182,7 @@ public class FibonacciHeap<I> {
 	 *			 CASCADING-CUT(H,y)
 	 *	if key[x]<key[min[H]] 
 	 *		then min[H] := x
+	 *
 	 * @param x the node to decrease the value
 	 * @param k the new value
 	 */
@@ -287,6 +288,7 @@ public class FibonacciHeap<I> {
 	 */
 	private void consolidate()
 	{
+		 double LogPhi = 1.0 / Math.log((1.0 + Math.sqrt(5.0)) / 2.0);
 		 int arraySize = ((int) Math.floor(Math.log(n) * LogPhi)) + 1;
 
 		        List<Node<I>> array = new ArrayList<Node<I>>(arraySize);
@@ -367,6 +369,7 @@ public class FibonacciHeap<I> {
 	 * make y a child of x 
 	 * degree[x] := degree[x] + 1 
 	 * mark[y] := FALSE
+	 * 
 	 * @param y the first node
 	 * @param x the second node
 	 */
@@ -393,45 +396,4 @@ public class FibonacciHeap<I> {
 
 	        y.isMarked = false;
 	    }
-	 
-	public String toString() {
-		if (min == null) {
-			return "FibonacciHeap=[]";
-		}
-
-		Stack<Node<I>> stack = new Stack<Node<I>>();
-		stack.push(min);
-
-		StringBuffer buf = new StringBuffer(512);
-		buf.append("FibonacciHeap=[");
-
-		while (!stack.empty()) {
-			Node<I> curr = stack.pop();
-			buf.append(curr);
-			buf.append(", ");
-
-			if (curr.child != null) {
-				stack.push(curr.child);
-			}
-
-			Node<I> start = curr;
-			curr = curr.next;
-
-			while (curr != start) {
-				buf.append(curr);
-				buf.append(", ");
-
-				if (curr.child != null) {
-					stack.push(curr.child);
-				}
-
-				curr = curr.next;
-			}
-		}
-
-		buf.append(']');
-
-		return buf.toString();
-	}
-	private static final double LogPhi = 1.0 / Math.log((1.0 + Math.sqrt(5.0)) / 2.0);
 }

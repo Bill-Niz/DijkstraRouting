@@ -621,7 +621,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	}
 	/**
 	 * 
-	 * 
 	 * @return the current time of the scheduler
 	 */
 	private String getCurrrentTime() {

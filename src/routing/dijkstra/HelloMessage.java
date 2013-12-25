@@ -43,7 +43,10 @@ public class HelloMessage implements Message {
 	{
 		private IPAddress routerID;
 		private int cost;
+		
 		/**
+		 * Create an instance of HelloData
+		 * 
 		 * @param routerID
 		 * @param cost
 		 */
@@ -75,7 +78,7 @@ public class HelloMessage implements Message {
 	}
 	/**
 	 * 
-	 * @return
+	 * @return the router id
 	 */
 	public IPAddress getRouterID() {
 		return routerID;
@@ -106,6 +109,7 @@ public class HelloMessage implements Message {
 		this.neighborsList = neighborsList;
 	}
 	/**
+	 * Create an instance of  HelloMessage
 	 * 
 	 * @param routerID
 	 * @param neighborsList
@@ -125,7 +129,4 @@ public class HelloMessage implements Message {
 		return "HelloMessage [routerID=" + routerID + ", numNeighbor="
 				+ numNeighbor + ", neighborsList=" + neighborsList + "]";
 	}
-	
-	
-	
 }

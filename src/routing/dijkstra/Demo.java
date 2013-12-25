@@ -46,7 +46,7 @@ public class Demo {
 	public static final String TOPO_FILE = "reso/data/topology.txt";
 	public static int HELLOIntervalTime = 1;
 	public static int LSPIntervalTime = 20;
-	public static int LSPAGEIntervalTime = 40;
+	public static int LSPAGEIntervalTime = 30;
 	/**
 	 * 
 	 * @param args

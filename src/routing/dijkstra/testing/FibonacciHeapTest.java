@@ -42,40 +42,15 @@ public class FibonacciHeapTest {
 	 */
 	@Test
 	public void testInsert() {
-		for (int i = 4; i < 7; i++) {
-			routing.dijkstra.Node<String> n = new routing.dijkstra.Node("R" + i, i);
-			fibHeap.insert(n);
-		}
+		
 	}
-
-	/**
-	 * Test method for
-	 * {@link routing.dijkstra.FibonacciHeap#delete(routing.dijkstra.Node)}.
-	 */
-	@Test
-	public void testDelete() {
-		for (int i = 4; i < 7; i++) {
-			routing.dijkstra.Node<String> n = new routing.dijkstra.Node("R" + i, i);
-			fibHeap.insert(n);
-		}
-		routing.dijkstra.Node<String> n = new routing.dijkstra.Node("R"+9,Double.POSITIVE_INFINITY);
-		fibHeap.insert(n);
-		 fibHeap.delete(n);
-	}
-
 	/**
 	 * Test method for {@link routing.dijkstra.FibonacciHeap#extractMin()}.
 	 */
 	@Test
 	public void testExtractMin() {
 		
-		for (int i = 4; i < 7; i++) {
-			routing.dijkstra.Node<String> n = new routing.dijkstra.Node("R" + i, i);
-			fibHeap.insert(n);
-		}
-		routing.dijkstra.Node<String> n = new routing.dijkstra.Node("R"+9,Double.POSITIVE_INFINITY);
-		fibHeap.insert(n);
-		routing.dijkstra.Node<String> min = fibHeap.extractMin();
+		
 		
 	}
 
@@ -88,30 +63,11 @@ public class FibonacciHeapTest {
 	public void testDecreaseKey() {
 		for (int i = 4; i < 7; i++) {
 			routing.dijkstra.Node<String> n = new routing.dijkstra.Node("R" + i, i);
-			fibHeap.insert(n);
+			//fibHeap.insert(n);
 		}
 		routing.dijkstra.Node<String> n = new routing.dijkstra.Node("R"+9,Double.POSITIVE_INFINITY);
-		fibHeap.insert(n);
+		//fibHeap.insert(n);
 		fibHeap.decreaseKey(n, 0);
-	}
-
-	/**
-	 * Test method for
-	 * {@link routing.dijkstra.FibonacciHeap#union(routing.dijkstra.FibonacciHeap, routing.dijkstra.FibonacciHeap)}
-	 * .
-	 */
-	@Test
-	public void testUnion() {
-		for (int i = 4; i < 7; i++) {
-			routing.dijkstra.Node<String> n = new routing.dijkstra.Node("R" + i, i);
-			fibHeap.insert(n);
-		}
-		FibonacciHeap<String> fibHeap2 = new FibonacciHeap<String>();
-		for (int i = 4; i < 7; i++) {
-			routing.dijkstra.Node<String> n = new routing.dijkstra.Node("R" + i, i);
-			fibHeap2.insert(n);
-		}
-		FibonacciHeap<String> fibHeapU = FibonacciHeap.union(fibHeap2, fibHeap2);
 	}
 
 }

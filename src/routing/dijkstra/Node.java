@@ -38,6 +38,13 @@ public class Node<I> {
 	 *
 	 * @author Bill Nizeyimana
 	 */
+	
+	/**
+	 * Create an instance of Node
+	 * 
+	 * @param object
+	 * @param value
+	 */
 	public Node(I object, double value) {
 		super();
 		this.object = object;
@@ -47,8 +54,6 @@ public class Node<I> {
 		this.prev = this;
 	}
 
-
-	
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
@@ -57,21 +62,4 @@ public class Node<I> {
 		return "Node [obj=" + object + ", val="
 				+ value + "]";
 	}
-
-
-	public  void print(Node<I> n)
-	{
-		if(n==null)
-			return;
-		System.out.print(n);
-		System.out.println("\t p:"+n.parent);
-		System.out.println("\tprev:"+n.prev);
-		System.out.println("\tnext:"+n.next);
-		System.out.println("_");
-	}
-
-
-	
-
-
 }

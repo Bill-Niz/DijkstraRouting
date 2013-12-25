@@ -37,6 +37,7 @@ import reso.common.Interface;
 import reso.common.InterfaceAttrListener;
 import reso.ip.Datagram;
 import reso.ip.IPAddress;
+import reso.ip.IPHost;
 import reso.ip.IPInterfaceAdapter;
 import reso.ip.IPInterfaceListener;
 import reso.ip.IPLoopbackAdapter;
@@ -73,9 +74,11 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		public IPInterfaceAdapter oif;
 
 		/**
-		 * @param idRouter
-		 * @param metric
-		 * @param oif
+		 * Create an instance of NeighborInfo
+		 * 
+		 * @param idRouter the router id
+		 * @param metric the metric
+		 * @param oif the out interface adapter 
 		 */
 		public NeighborInfo(IPAddress idRouter, int metric,
 				IPInterfaceAdapter oif) {
@@ -97,12 +100,14 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 
 	}
 
-	/**
-	 * 
-	 * @param router
-	 * @param hELLOInstervalTime
-	 * @param lSPInstervalTime
-	 */
+/**
+ * Create an instance of DijkstraRoutingProtocol
+ * 
+ * @param router
+ * @param hELLOInstervalTime
+ * @param lSPInstervalTime
+ * @param AGEINGInstervalTime
+ */
 	public DijkstraRoutingProtocol(IPRouter router, int hELLOInstervalTime,
 			int lSPInstervalTime,int AGEINGInstervalTime) {
 		super(router, PROTOCOL_NAME);
@@ -183,8 +188,9 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	}
 
 	/**
+	 * Update the RIB
 	 * 
-	 * @param u
+	 * @param u the node that contain the new route to this destination
 	 */
 	private void updateRIB(Node<LSPMessage> u) {
 		if (!this.router.getIPLayer().hasAddress(u.object.getRouterID())) {
@@ -236,11 +242,11 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		}
 	}
 	/***
-	 * This method compute the
+	 * This method compute the next best ip address (router Id) from a reverse table to a destination
 	 * 
 	 * @param reverseTable the reverse table
 	 * @param destination the router id destination
-	 * @return
+	 * @return the ip address (router Id) of the router where you have to pass through to access to a destination
 	 */
 	private IPAddress computeReversePath(LinkedHashMap<IPAddress, LinkedList<IPAddress>> reverseTable,IPAddress destination) {
 
@@ -310,9 +316,10 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		}
 	}
 /**
- * 
+ *  Check if a router id is in the neighbors list
+ *  
  * @param idRouter
- * @return
+ * @return true if contain otherwise false
  */
 	private boolean isInTempNeighborsList(IPAddress idRouter)
 	{
@@ -329,8 +336,9 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		return isIn;
 	}
 	/**
+	 * Delete a router from the neighbors list
 	 * 
-	 * @param idRouter
+	 * @param idRouter the router id you want to delete
 	 */
 		private void deleteInTempNeighborsList(IPAddress idRouter)
 		{
@@ -343,8 +351,9 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			}
 			
 		}
+		
 	/**
-	 * 
+	 * This method create and send hello messages to all router interface except the loopback
 	 */
 	private void sendHello() {
 		try {
@@ -365,7 +374,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	}
 
 	/**
-	 * 
+	 * This method create and send lsp messages 
 	 */
 	private void sendLSP() {
 		IPInterfaceAdapter ifaceLoop = getLoopBack();
@@ -376,9 +385,10 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	}
 
 	/**
+	 * This method send lsp messages to all router interface except the loopback interface and the source interface
 	 * 
-	 * @param src
-	 * @param lsp
+	 * @param src the interface adapter of the source router
+	 * @param lsp the lsp message to send
 	 */
 	private void sendLSP(IPInterfaceAdapter src, LSPMessage lsp) {
 		try {
@@ -427,7 +437,8 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	}
 
 	/**
-	 * 
+	 *  This method initiate the hello timer
+	 *  
 	 * @throws Exception
 	 */
 	private void initHelloTimer() throws Exception {
@@ -445,7 +456,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 
 	}
 	/**
-	 * 
+	 * This method initiate the lsp timer
 	 */
 	private void initLSPTimer() {
 
@@ -461,12 +472,12 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		this.LSPTimer.start();
 	}
 	/**
-	 * 
+	 *  This method initiate the ageing timer
 	 */
 	private void initAGEINGTimer() {
 
 		this.AGEINGTimer = new AbstractTimer(
-				this.router.getNetwork().scheduler, 2, true) {
+				this.router.getNetwork().scheduler, 1, true) {
 
 			@Override
 			protected void run() throws Exception {
@@ -477,7 +488,9 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		this.AGEINGTimer.start();
 	}
 	/**
-	 * 
+	 * This method handle the ageing function.
+	 * Every second the aging value of all lsp in the LSDB except my own lsp, are decremented.
+	 * When the value is zero, the lsp is deleted.
 	 */
 	protected void handleLSPAgeing() {
 
@@ -489,6 +502,8 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				if (!this.router.getIPLayer().hasAddress(key)) {
 					if (value.age == 0)
 						this.LSDB.remove(key);
+					
+					
 					else
 						value.age -= 1;
 				}
@@ -496,13 +511,15 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		}
 	}
 	/**
-	 * 
+	 *  Creat a new lsp message with all adjacencies  
+	 *  
+	 *  
 	 * @param ipSrc
 	 * @param oif
-	 * @return
+	 * @param numSequence
+	 * @return a new lsp message
 	 */
-	private LSPMessage creatLSP(IPAddress ipSrc, IPInterfaceAdapter oif,
-			int numSequence) {
+	private LSPMessage creatLSP(IPAddress ipSrc, IPInterfaceAdapter oif,int numSequence) {
 		Map<IPAddress, LSPData> lsp = new HashMap<>();
 
 		for (Entry<IPAddress, NeighborInfo> entry : this.neighborInfoList
@@ -519,7 +536,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 
 	/**
 	 * 
-	 * @return
+	 * @return the router id
 	 */
 	private IPAddress getRouterID() {
 		IPAddress routerID = null;
@@ -545,6 +562,9 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		initHelloTimer();
 		initLSPTimer();
 		initAGEINGTimer();
+		
+		
+		
 	}
 
 	@Override
@@ -601,15 +621,18 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 	}
 	/**
 	 * 
-	 * @return
+	 * 
+	 * @return the current time of the scheduler
 	 */
 	private String getCurrrentTime() {
 		return ((double) (host.getNetwork().getScheduler().getCurrentTime()))
 				+ " s";
 	}
 	/**
+	 *  This method delete the router at the edge the interface.
+	 *  It's delete router in the neighbor list and the Adjacency list
 	 * 
-	 * @param iface
+	 * @param iface the interface where the end route is connected
 	 */
 	private void deleteNeighbor(Interface iface) {
 		for (Entry<IPAddress, NeighborInfo> entry : this.neighborInfoList

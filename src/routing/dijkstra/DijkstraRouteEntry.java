@@ -34,6 +34,14 @@ public class DijkstraRouteEntry extends IPRouteEntry {
 
 	private int metric;
 	
+	/**
+	 * Create an instance of DijkstraRouteEntry
+	 * 
+	 * @param dst
+	 * @param oif
+	 * @param type
+	 * @param metric
+	 */
 	public DijkstraRouteEntry(IPAddress dst, IPInterfaceAdapter oif, String type , int metric) {
 		super(dst, oif, type);
 		this.metric = metric;

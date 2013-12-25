@@ -40,8 +40,8 @@ public class LSPMessage implements Message{
 	private int numSequence;
 	public byte numAdj = 0;
 	public int age;
-	public IPInterfaceAdapter oif;
     private final Map<IPAddress,LSPData> lsp;
+    public IPInterfaceAdapter oif;
     
 	public static class LSPData
 	{
@@ -50,9 +50,10 @@ public class LSPMessage implements Message{
 		public int metric;
 		
 		/**
+		 * Create an instance of LSPData
+		 * 
 		 * @param routerID
 		 * @param metric
-		 * @param oif
 		 */
 		public LSPData(IPAddress routerID, int metric) {
 			super();
@@ -65,10 +66,12 @@ public class LSPMessage implements Message{
 		 */
 		@Override
 		public String toString() {
-			return "[" + routerID + ":" + metric + "]";
+			return "[" + routerID + " - cost:" + metric + "]";
 		}
 	}
 	/**
+	 * Create an instance of LSPMessage
+	 * 
 	 * @param routerID
 	 * @param numSequence
 	 * @param lsp
@@ -110,7 +113,7 @@ public class LSPMessage implements Message{
 	@Override
 	public String toString() {
 		return "[" + routerID + " : "
-				+ numSequence + ";" + oif + ", lsp=" + lsp + "]";
+				+ numSequence + " ; age: " + age + " - lsp = " + lsp + "]";
 	}
 	
 }

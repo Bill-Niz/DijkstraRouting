@@ -33,13 +33,25 @@ import java.util.Stack;
 */
 public class FibonacciHeap<I> {
 	
-	private static final double LogPhi = 1.0 / Math.log((1.0 + Math.sqrt(5.0)) / 2.0);
-	public Node<I> min;
-	public int n = 0;
+	private Node<I> min;
+	private int n = 0;
+	
 	
 	/**
+	 * @return the min
+	 */
+	public Node<I> getMin() {
+		return min;
+	}
+	/**
+	 * @return the n
+	 */
+	public int getN() {
+		return n;
+	}
+	/**
 	 * 
-	 * @return
+	 * @return true if Heap is empty otherwise false
 	 */
 	public boolean isEmpty()
 	{
@@ -58,30 +70,9 @@ public class FibonacciHeap<I> {
 	 *		then min[H] := x 
 	 *	n[H]:= n[H]+1
 	 *
-	 * @param x
-	 */
-	public void insert(Node<I> x)
-	{
-        if (min != null) {
-            x.prev = min;
-            x.next = min.next;
-            min.next = x;
-            x.next.prev = x;
-
-            if (x.value < min.value) {
-                min = x;
-            }
-        } else {
-            min = x;
-        }
-
-        n++;
-	}
-	/**
-	 * 
 	 * @param object
 	 * @param value
-	 * @return
+	 * @return the new inserted node
 	 */
 	public Node<I> insert(I object, double value)
 	{
@@ -104,11 +95,13 @@ public class FibonacciHeap<I> {
         return x;
 	}
 	/**
-	 * Fibonacci-Heap-Delete(H,x)
-	 * Fibonacci-Heap-Decrease-Key(H,x,-infinity) 
-	 * Fibonacci-Heap-Extract-Min(H)
+	 * Delete the node in the heap
 	 * 
-	 * @param x
+	 * Fibonacci-Heap-Delete(H,x)
+	 * 	Fibonacci-Heap-Decrease-Key(H,x,-infinity) 
+	 * 	Fibonacci-Heap-Extract-Min(H)
+	 * 
+	 * @param x the node to delete
 	 */
 	public void delete(Node<I> x)
     {
@@ -117,6 +110,8 @@ public class FibonacciHeap<I> {
     }
 
 	/**
+	 * Extract and delete the node with the minimum value
+	 * 
 	 * 	Fibonacci-Heap-Extract-Min(H) 
 	 * 	z:= min[H]
 	 *	if x <> NIL
@@ -131,51 +126,52 @@ public class FibonacciHeap<I> {
 	 *					CONSOLIDATE(H) 
 	 *			n[H] := n[H]-1
 	 *	return z
-	 * @return
+	 *
+	 * @return the minimum node of the heap
 	 */
-	public Node<I> extractMin()
-	{
+	public Node<I> extractMin() {
 		Node<I> z = min;
 
-        if (z != null) {
-            int kids = z.degree;
-            Node<I> x = z.child;
-            Node<I> tempnext;
+		if (z != null) {
+			int kids = z.degree;
+			Node<I> x = z.child;
+			Node<I> tempnext;
 
-            
-            while (kids > 0) {
-                tempnext = x.next;
+			while (kids > 0) {
+				tempnext = x.next;
 
-                x.prev.next = x.next;
-                x.next.prev = x.prev;
+				x.prev.next = x.next;
+				x.next.prev = x.prev;
 
-                x.prev = min;
-                x.next = min.next;
-                min.next = x;
-                x.next.prev = x;
-                
-                x.parent = null;
-                x = tempnext;
-                kids--;
-            }
-          
-            z.prev.next = z.next;
-            z.next.prev = z.prev;
+				x.prev = min;
+				x.next = min.next;
+				min.next = x;
+				x.next.prev = x;
 
-            if (z == z.next) {
-                min = null;
-            } else {
-                min = z.next;
-                consolidate();
-            }
+				x.parent = null;
+				x = tempnext;
+				kids--;
+			}
 
-            n--;
-        }
+			z.prev.next = z.next;
+			z.next.prev = z.prev;
 
-        return z;
-		
+			if (z == z.next) {
+				min = null;
+			} else {
+				min = z.next;
+				consolidate();
+			}
+
+			n--;
+		}
+
+		return z;
+
 	}
 	/**
+	 * This method decrease value of the node
+	 * 
 	 * 	Fibonacci-Heap-Decrease-Key(H,x,k)
 	 * 	if k > key[x]
 	 * 		then error "new key is greater than current key"
@@ -186,8 +182,8 @@ public class FibonacciHeap<I> {
 	 *			 CASCADING-CUT(H,y)
 	 *	if key[x]<key[min[H]] 
 	 *		then min[H] := x
-	 * @param x
-	 * @param k
+	 * @param x the node to decrease the value
+	 * @param k the new value
 	 */
 	public void decreaseKey(Node<I> x, double k)
     {
@@ -214,12 +210,12 @@ public class FibonacciHeap<I> {
 	 *	Add x to the root list of H 
 	 *	p[x]:= NIL
 	 *	mark[x]:= FALSE
-	 * @param x
-	 * @param y
+	 *
+	 * @param x the first node
+	 * @param y the second node
 	 */
 	private void cut(Node<I> x, Node<I> y)
 	{
-		 // remove x from childlist of y and decrement H
         x.prev.next = x.next;
         x.next.prev = x.prev;
         y.degree--;
@@ -291,13 +287,10 @@ public class FibonacciHeap<I> {
 	 */
 	private void consolidate()
 	{
-		 int arraySize =
-		            ((int) Math.floor(Math.log(n) * LogPhi)) + 1;
+		 int arraySize = ((int) Math.floor(Math.log(n) * LogPhi)) + 1;
 
-		        List<Node<I>> array =
-		            new ArrayList<Node<I>>(arraySize);
+		        List<Node<I>> array = new ArrayList<Node<I>>(arraySize);
 
-		         
 		        for (int i = 0; i < arraySize; i++) {
 		            array.add(null);
 		        }
@@ -374,12 +367,12 @@ public class FibonacciHeap<I> {
 	 * make y a child of x 
 	 * degree[x] := degree[x] + 1 
 	 * mark[y] := FALSE
-	 * @param y
-	 * @param x
+	 * @param y the first node
+	 * @param x the second node
 	 */
 	 private void link(Node<I> y, Node<I> x)
 	    {
-	        // remove y from root list of heap
+	        
 	        y.prev.next = y.next;
 	        y.next.prev = y.prev;
 
@@ -401,88 +394,44 @@ public class FibonacciHeap<I> {
 	        y.isMarked = false;
 	    }
 	 
-	 /**
-	  * Fibonacci-Heap-Union(H1,H2) 
-	  * H := Make-Fibonacci-Heap()
-	  *	min[H] := min[H1]
-	  *	Concatenate the root list of H2 with the root list of H
-	  *	if (min[H1] = NIL) or (min[H2] <> NIL and min[H2] < min[H1])
-	  *		then min[H] := min[H2] 
-	  *	n[H] := n[H1] + n[H2] 
-	  *	free the objects H1 and H2 
-	  * return H
-	  * @param h1
-	  * @param h2
-	  * @return
-	  */
-	 public static <I> FibonacciHeap<I> union( FibonacciHeap<I> h1, FibonacciHeap<I> h2)
-		    {
-		 FibonacciHeap<I> h = new FibonacciHeap<I>();
+	public String toString() {
+		if (min == null) {
+			return "FibonacciHeap=[]";
+		}
 
-		        if ((h1 != null) && (h2 != null)) {
-		            h.min = h1.min;
+		Stack<Node<I>> stack = new Stack<Node<I>>();
+		stack.push(min);
 
-		            if (h.min != null) {
-		                if (h2.min != null) {
-		                    h.min.next.prev = h2.min.prev;
-		                    h2.min.prev.next = h.min.next;
-		                    h.min.next = h2.min;
-		                    h2.min.prev = h.min;
+		StringBuffer buf = new StringBuffer(512);
+		buf.append("FibonacciHeap=[");
 
-		                    if (h2.min.value < h1.min.value) {
-		                        h.min = h2.min;
-		                    }
-		                }
-		            } else {
-		                h.min = h2.min;
-		            }
+		while (!stack.empty()) {
+			Node<I> curr = stack.pop();
+			buf.append(curr);
+			buf.append(", ");
 
-		            h.n = h1.n + h2.n;
-		        }
+			if (curr.child != null) {
+				stack.push(curr.child);
+			}
 
-		        return h;
-		    }
-	 /**
-	  * 
-	  */
-	 public String toString()
-	    {
-	        if (min == null) {
-	            return "FibonacciHeap=[]";
-	        }
-	 
-	        Stack<Node<I>> stack = new Stack<Node<I>>();
-	        stack.push(min);
+			Node<I> start = curr;
+			curr = curr.next;
 
-	        StringBuffer buf = new StringBuffer(512);
-	        buf.append("FibonacciHeap=[");
-	 
-	        while (!stack.empty()) {
-	            Node<I> curr = stack.pop();
-	            buf.append(curr);
-	            buf.append(", ");
+			while (curr != start) {
+				buf.append(curr);
+				buf.append(", ");
 
-	            if (curr.child != null) {
-	                stack.push(curr.child);
-	            }
+				if (curr.child != null) {
+					stack.push(curr.child);
+				}
 
-	            Node<I> start = curr;
-	            curr = curr.next;
+				curr = curr.next;
+			}
+		}
 
-	            while (curr != start) {
-	                buf.append(curr);
-	                buf.append(", ");
+		buf.append(']');
 
-	                if (curr.child != null) {
-	                    stack.push(curr.child);
-	                }
-
-	                curr = curr.next;
-	            }
-	        }
-
-	        buf.append(']');
-
-	        return buf.toString();
-	    }
+		return buf.toString();
+	}
+	private static final double LogPhi = 1.0 / Math.log((1.0 + Math.sqrt(5.0)) / 2.0);
 }

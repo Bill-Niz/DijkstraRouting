@@ -56,11 +56,14 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			.allocateProtocolNumber(PROTOCOL_NAME);
 	private int HELLOInstervalTime = 2;
 	private int LSPInstervalTime = 20;
-	private int AGEINGInstervalTime = 40;
+	private int AGEINGInstervalTime = 30;
+	private int DijkstraIntervalTime = 40;
 	private IPRouter router;
 	private AbstractTimer helloTimer;
 	private AbstractTimer LSPTimer;
 	private AbstractTimer AGEINGTimer;
+	private AbstractTimer DijkstraTimer;
+	
 	private int numSeq = 0;
 
 	private ArrayList<HelloMessage.HelloData> neighborsList = new ArrayList<>();
@@ -109,12 +112,13 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
  * @param AGEINGInstervalTime
  */
 	public DijkstraRoutingProtocol(IPRouter router, int hELLOInstervalTime,
-			int lSPInstervalTime,int AGEINGInstervalTime) {
+			int lSPInstervalTime,int AGEINGInstervalTime, int DijkstraIntervalTime) {
 		super(router, PROTOCOL_NAME);
 		this.router = router;
 		this.HELLOInstervalTime = hELLOInstervalTime;
 		this.LSPInstervalTime = lSPInstervalTime;
 		this.AGEINGInstervalTime = AGEINGInstervalTime;
+		this.DijkstraIntervalTime = DijkstraIntervalTime;
 	}
 
 	/**
@@ -201,7 +205,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			} else if (tData.metric > u.value) {
 				this.table.put(u.object.getRouterID(), new NeighborInfo(
 						u.object.getRouterID(), (int) u.value, u.object.oif));
-				//this.router.getIPLayer().removeRoute(u.object.getRouterID());
+				this.router.getIPLayer().removeRoute(u.object.getRouterID());
 			}
 		}
 
@@ -433,7 +437,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 				sendLSP(src, lspMsg);
 			}
 		}
-		this.dijkstra(LSDB, getRouterID());
+		
 	}
 
 	/**
@@ -449,7 +453,6 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 			@Override
 			protected void run() throws Exception {
 				sendHello();
-
 			}
 		};
 		this.helloTimer.start();
@@ -487,6 +490,23 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		};
 		this.AGEINGTimer.start();
 	}
+	/**
+	 * This method initiate the dijkstra timer
+	 */
+		private void initDijkstraTimer() {
+			this.DijkstraTimer = new AbstractTimer(
+					this.router.getNetwork().scheduler, DijkstraIntervalTime, true) {
+
+				@Override
+				protected void run() throws Exception {
+
+					dijkstra(LSDB, getRouterID());
+				}
+			};
+			this.DijkstraTimer.start();
+			
+		}
+
 	/**
 	 * This method handle the ageing function.
 	 * Every second the aging value of all lsp in the LSDB except my own lsp, are decremented.
@@ -562,11 +582,8 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		initHelloTimer();
 		initLSPTimer();
 		initAGEINGTimer();
-		
-		
-		
+		initDijkstraTimer();	
 	}
-
 	@Override
 	public void stop() {
 		this.router.getIPLayer().removeListener(IP_PROTO_DIJKSTRA, this);
@@ -577,7 +594,7 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 		this.helloTimer.stop();
 		this.LSPTimer.stop();
 		this.AGEINGTimer.stop();
-
+		this.DijkstraTimer.stop();
 	}
 	
 	@Override
@@ -602,7 +619,8 @@ public class DijkstraRoutingProtocol extends AbstractApplication implements
 
 	@Override
 	public void attrChanged(Interface iface, String attr) {
-		System.out.println("attrChanged : on " + iface + " with " + attr);
+		System.out.println(getCurrrentTime() + ". " + this.router
+				+ " - attrChanged : on " + iface + " with " + attr);
 		switch (attr) {
 		case IPInterfaceAdapter.STATE: {
 			this.numSeq++;

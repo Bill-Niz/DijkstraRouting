@@ -47,6 +47,7 @@ public class Demo {
 	public static int HELLOIntervalTime = 1;
 	public static int LSPIntervalTime = 20;
 	public static int LSPAGEIntervalTime = 30;
+	public static int DijkstraIntervalTime = 40;
 	/**
 	 * 
 	 * @param args
@@ -67,7 +68,7 @@ public class Demo {
 					continue;
 				IPRouter router = (IPRouter) n;
 				router.addApplication(new DijkstraRoutingProtocol(router,
-						HELLOIntervalTime, LSPIntervalTime,LSPAGEIntervalTime));
+						HELLOIntervalTime, LSPIntervalTime,LSPAGEIntervalTime,DijkstraIntervalTime));
 				router.start();
 			}
 			 
